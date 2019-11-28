@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 var uniqueValidator = require('mongoose-unique-validator');
-/* mongoose.set('useCreateIndex', true); */
-
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
   firstName: String,
@@ -22,6 +20,5 @@ const userSchema = new Schema({
   country: String,
   picture: String
 });
-
 userSchema.plugin(uniqueValidator);
 module.exports = mongoose.model('users', userSchema, 'users');

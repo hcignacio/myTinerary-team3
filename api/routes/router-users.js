@@ -7,6 +7,9 @@ const jwt = require("jsonwebtoken");
 
 const passport = require('../../passport');
 
+router.get('/', (req, res) => {
+  console.log(key.secretKey);
+
 router.get('/',
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
@@ -39,7 +42,6 @@ router.post('/add',
         img: req.body.picture,
         mail: req.body.mail
       })
-
       user
         .save(function (err) {
           if (err) {
