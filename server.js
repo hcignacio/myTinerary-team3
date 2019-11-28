@@ -6,6 +6,11 @@ const cities = require('./api/routes/router-cities');
 const itineraries = require('./api/routes/router-itineraries');
 const users = require('./api/routes/router-users');
 
+const passport = require('./passport');
+app.use(passport.initialize());
+/* app.use(passport.session()); */
+/* require('./passport')(passport); */
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 

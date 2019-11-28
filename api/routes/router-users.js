@@ -5,17 +5,19 @@ const { check, validationResult } = require('express-validator');
 const key = require("../../nodemon.json");
 const jwt = require("jsonwebtoken");
 
-router.get('/', (req, res) => {
-  console.log(key.secretKey);
+const passport = require('../../passport');
 
-  User.find()
-    .then(doc => {
-      res.status(200).json(doc)
-    })
-    .catch(err => {
-      res.status(500).json({ error: err })
-    })
-});
+router.get('/',
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    User.find()
+      .then(doc => {
+        res.status(200).json(doc)
+      })
+      .catch(err => {
+        res.status(500).json({ error: err })
+      })
+  });
 
 router.post('/add',
   [
@@ -56,35 +58,42 @@ router.post('/login',
     const password = req.body.password
     const userWithEmail = await findUserByEmail(email)
 
-    if (userWithEmail.password === password) {
-      const payload = {
-        id: userWithEmail._id,
-        username: userWithEmail.userName
-      };
-      const options = { expiresIn: 2592000 };
-      jwt.sign(
-        payload,
-        key.secretKey,
-        options,
-        (err, token) => {
-          if (err) {
-            res.json({
-              success: false,
-              token: "There was an error"
-            });
-          } else {
-            res.json({
-              success: true,
-              token: token
-            });
+    if (userWithEmail) {
+      if (userWithEmail.password === password) {
+        const payload = {
+          id: userWithEmail._id,
+          username: userWithEmail.userName
+        };
+        const options = { expiresIn: 2592000 };
+        jwt.sign(
+          payload,
+          key.secretKey,
+          options,
+          (err, token) => {
+            if (err) {
+              res.json({
+                success: false,
+                token: "There was an error"
+              });
+            } else {
+              res.json({
+                success: true,
+                token: token
+              });
+            }
           }
-        }
-      );
+        );
+      }
+      else {
+        res.send('Wrong password')
+      }
     }
     else {
-      res.send('Wrong password')
+      res.send('email not registered')
     }
   });
+
+
 
 async function findUserByEmail(email) {
   try {
