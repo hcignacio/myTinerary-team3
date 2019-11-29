@@ -7,27 +7,25 @@ const jwt = require("jsonwebtoken");
 const passport = require('../../passport');
 
 router.get('/', passport.authenticate("jwt", { session: false }),
-(req, res) => {
+  (req, res) => {
 
-  User.find()
-    .then(doc => {
-      res.status(200).json(doc)
-    })
-    .catch(err => {
-      res.status(500).json({ error: err })
-    })
-});
+    User.find()
+      .then(doc => {
+        res.status(200).json(doc)
+      })
+      .catch(err => {
+        res.status(500).json({ error: err })
+      })
+  });
 
 router.post('/add',
-  [    check('mail').isEmail(),
-    check('password').isLength({ min: 5 })
+  [check('mail').isEmail(),
+  check('password').isLength({ min: 5 })
   ],
   (req, res) => {
-    console.log(req.body)
     const errors = validationResult(req);
-    
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
+    if (!(errors.isEmpty())) {
+      return res.status(422).json({ expressErrors: errors });
     }
     else {
       const user = new User({
@@ -36,27 +34,27 @@ router.post('/add',
         password: req.body.password,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
-        img: req.body.picture,
+        picture: req.body.picture,
         mail: req.body.mail
       })
       user
         .save(function (err) {
           if (err) {
-            res.send(err.message);
+            return res.status(400).json({ databaseErrors: err });
           }
           else {
-            res.send('User added successfully')
+            res.json('User added successfully')
           }
         });
     }
   });
 
-  router.post('/login',
+router.post('/login',
   async function (req, res) {
     const email = req.body.email
     const password = req.body.password
     const userWithEmail = await findUserByEmail(email)
- 
+
     if (userWithEmail) {
       if (userWithEmail.password === password) {
         const payload = {
@@ -93,7 +91,7 @@ router.post('/add',
   });
 
 
- 
+
 async function findUserByEmail(email) {
   try {
     return User.findOne({ 'mail': email.toLowerCase() })

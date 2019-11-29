@@ -4,6 +4,7 @@ import Form from "react-bootstrap/Form";
 import NavBar from "../Nav/nav";
 import Image from "react-bootstrap/Image";
 import "./signup.css";
+import ModalError from "../ModalError/ModalError";
 
 export default class Signup extends Component {
   state = {
@@ -18,7 +19,9 @@ export default class Signup extends Component {
     checkTC: false,
     expandChangeImage: false,
     imageProfile:
-      "http://svgur.com/i/65U.svg"
+      "http://svgur.com/i/65U.svg",
+    errors: "",
+    mostrarErrores: false
   };
 
   valueUser(e) {
@@ -51,7 +54,12 @@ export default class Signup extends Component {
     }
   }
 
+  showError() {
+
+  }
+
   obtenerDatos(e) {
+    e.preventDefault();
     let user = {
       firstName: this.state.firstName,
       lastName: this.state.lastName,
@@ -61,19 +69,88 @@ export default class Signup extends Component {
       country: this.state.country,
       picture: this.state.imageProfile
     };
-    console.log(user)
-    fetch('/users/add', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(user)
-    })
-      .then(res => console.log(res))
-      .catch(error => console.log(error))
-    e.preventDefault();
+    if (!(this.state.checkTC)) {
+      this.setState({
+        errors: "You have to accept Terms and Conditions agreement",
+        mostrarErrores: true
+      })
+    }
+    else {
+      fetch('/users/add', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+      })
+        .then(res => res.json())
+        .then(res => {          
+          /* console.log("res.expressErrors",res.expressErrors); */
+          /* console.log("res.databaseErrors",res.databaseErrors); */
+          
+          if (res.expressErrors || res.databaseErrors) {
+            if (res.expressErrors) {
+              /* console.log(res.expressErrors.errors); */
+              if (res.expressErrors.errors.length === 2) {
+
+                this.setState({
+                  errors: "Invalid Email & password (5 characters minimum)",
+                  mostrarErrores: true
+                })
+              }
+              else if (res.expressErrors.errors[0].param === "mail") {
+                this.setState({
+                  errors: "Invalid Email",
+                  mostrarErrores: true
+                })
+              }
+              else if (res.expressErrors.errors[0].param === "password") {
+                this.setState({
+                  errors: "Invalid password (5 characters minimum)",
+                  mostrarErrores: true
+                })
+              }
+            }
+
+            if (res.databaseErrors) {
+              /* console.log("res errors", res.databaseErrors); */
+              if (res.databaseErrors.errors.mail && res.databaseErrors.errors.userName) {
+                this.setState({
+                  errors: "Email & username already registered",
+                  mostrarErrores: true
+                })
+              }
+              else {
+                if (res.databaseErrors.errors.mail) {
+                  this.setState({
+                    errors: "Email already registered",
+                    mostrarErrores: true
+                  })
+                } else if (res.databaseErrors.errors.userName) {
+                  this.setState({
+                    errors: "Username already used",
+                    mostrarErrores: true
+                  })
+                }
+              }
+            }
+          }
+          else {
+            alert("Usuario agregado!")
+          }
+        })
+        .catch(error => console.log("catch", error))
+    }
   }
+
+
+  mostrarErrores() {
+    this.setState({
+      mostrarErrores: false
+    })
+  }
+
 
   render() {
     return (
@@ -133,6 +210,11 @@ export default class Signup extends Component {
               </>
             )}
           </div>
+
+          {this.state.mostrarErrores &&
+            <ModalError errors={this.state.errors} mostrar={() => this.mostrarErrores()} />
+          }
+
 
           <Form className="px-5 container-fluid h-100">
             <Form.Group controlId="user">
@@ -228,7 +310,7 @@ export default class Signup extends Component {
                 onClick={e => this.obtenerDatos(e)}
               >
                 Submit
-              </Button>
+                </Button>
             </div>
           </Form>
         </div>
